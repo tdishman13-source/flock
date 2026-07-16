@@ -1,0 +1,810 @@
+<meta charset="utf-8">
+<title>Black Sheep</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Black Sheep">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#12160f">
+<!-- iOS ignores data: URLs for home-screen icons; this resolves when hosted next to the file, otherwise Safari falls back to a page screenshot -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<style>
+  /* Night-pasture palette: dark moss ground, wool cream, lantern amber */
+  :root{
+    --ground:#12160f;
+    --card:#1c2318;
+    --card-2:#232c1e;
+    --line:#39442f;
+    --wool:#f2edde;
+    --wool-dim:#b9bfa8;
+    --moss:#8d9a78;
+    --amber:#e8a33c;
+    --amber-deep:#c47f1d;
+    --blood:#d96c4f;
+    --ok:#7db8e8; /* blue, not green: amber/blue/terracotta stay distinct for red-green colorblindness */
+    --radius:20px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--ground);
+    color:var(--wool);
+    font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif;
+    min-height:100dvh;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+    overscroll-behavior-y:contain;
+  }
+  #app{
+    max-width:520px; margin:0 auto;
+    padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 24px);
+    min-height:100dvh; display:flex; flex-direction:column;
+  }
+  h1,h2,h3{margin:0; text-wrap:balance;}
+  .eyebrow{
+    font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--moss);
+  }
+  .screen{display:flex; flex-direction:column; gap:16px; flex:1;}
+
+  /* ---------- buttons ---------- */
+  button{
+    font:inherit; color:inherit; border:none; cursor:pointer; touch-action:manipulation;
+  }
+  .btn{
+    display:block; width:100%; padding:17px 20px; border-radius:var(--radius);
+    background:var(--amber); color:#241a05; font-size:19px; font-weight:800;
+    box-shadow:0 4px 0 var(--amber-deep);
+    transition:transform .06s ease;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--amber-deep);}
+  .btn.ghost{
+    background:var(--card); color:var(--wool); box-shadow:0 4px 0 #0c0f09;
+    border:1px solid var(--line);
+  }
+  .btn.danger{background:var(--blood); color:#2a0e05; box-shadow:0 4px 0 #a44430;}
+  .btn:disabled{opacity:.4; box-shadow:none; transform:none;}
+  .btn.small{width:auto; padding:10px 16px; font-size:15px; border-radius:14px;}
+  .row{display:flex; gap:10px; align-items:center;}
+  .row .btn{flex:1;}
+  button:focus-visible,.chip:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  /* ---------- home ---------- */
+  .logo{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0 2px; text-align:center;}
+  .logo svg{width:96px; height:96px;}
+  .logo h1{font-size:44px; font-weight:900; letter-spacing:-.02em; line-height:1;}
+  .logo .tag{color:var(--moss); font-size:15px; font-weight:600;}
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px;
+  }
+  .panel h3{font-size:13px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--moss); margin-bottom:12px;}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--card-2); border:1px solid var(--line); border-radius:999px;
+    padding:9px 14px; font-size:16px; font-weight:700; color:var(--wool);
+  }
+  .chip .x{color:var(--moss); font-weight:900; font-size:18px; padding:10px 12px; margin:-10px -10px -10px -6px;} /* big hit target, same visual size */
+  .chip.cat{font-size:14px; padding:8px 12px; color:var(--wool-dim);}
+  .chip.cat.on{background:#403513; border-color:var(--amber); color:var(--wool);}
+  .addrow{display:flex; gap:8px; margin-top:10px;}
+  .addrow input{
+    flex:1; font:inherit; font-size:17px; padding:12px 14px; border-radius:14px;
+    border:1px solid var(--line); background:var(--ground); color:var(--wool);
+    -webkit-user-select:text; user-select:text;
+  }
+  .addrow input::placeholder{color:#6a7458;}
+  .addrow .btn{width:auto; padding:12px 18px; font-size:16px;}
+
+  .setrow{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .setrow:last-child{border-bottom:none; padding-bottom:0;}
+  .setrow:first-of-type{padding-top:0;}
+  .setrow .lbl{font-size:16px; font-weight:700;}
+  .setrow .sub{font-size:13px; color:var(--moss); margin-top:2px;}
+  .seg{display:flex; background:var(--ground); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .seg button{padding:9px 14px; font-size:15px; font-weight:800; background:transparent; color:var(--wool-dim);}
+  .seg button.on{background:var(--amber); color:#241a05;}
+
+  .score-list{display:flex; flex-direction:column; gap:6px;}
+  .score-item{display:flex; justify-content:space-between; font-size:17px; font-weight:700; padding:6px 2px;}
+  .score-item .pts{font-variant-numeric:tabular-nums; color:var(--amber);}
+
+  details.howto{border:1px solid var(--line); border-radius:var(--radius); background:var(--card); padding:14px 16px;}
+  details.howto summary{font-weight:800; font-size:16px; cursor:pointer; list-style:none;}
+  details.howto summary::-webkit-details-marker{display:none;}
+  details.howto summary::after{content:"+"; float:right; color:var(--amber); font-weight:900;}
+  details.howto[open] summary::after{content:"–";}
+  details.howto p{color:var(--wool-dim); font-size:15px; line-height:1.55; margin:10px 0 0;}
+  details.howto b{color:var(--wool);}
+
+  /* ---------- reveal ---------- */
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; width:100%;}
+  .passname{font-size:46px; font-weight:900; letter-spacing:-.02em; overflow-wrap:anywhere;}
+  .holdbtn{
+    width:100%; min-height:300px; border-radius:26px; padding:24px;
+    background:var(--card); border:2px dashed var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    font-size:20px; font-weight:800; color:var(--wool-dim);
+    touch-action:none; /* a drifting finger must not turn into a scroll: pointercancel would hide the card mid-peek */
+  }
+  .holdbtn.held{border-style:solid;}
+  .holdbtn .word{font-size:44px; font-weight:900; color:var(--wool); letter-spacing:-.02em; line-height:1.05; overflow-wrap:anywhere;}
+  .holdbtn .cat{font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); font-weight:800;}
+  .holdbtn.sheep{background:#0b0d09; border-color:#000;}
+  .holdbtn.sheep .word{color:var(--blood);}
+  .progress{font-size:14px; color:var(--moss); font-weight:700; letter-spacing:.1em; text-transform:uppercase;}
+
+  /* ---------- discussion ---------- */
+  .bigtimer{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    font-size:76px; font-weight:800; font-variant-numeric:tabular-nums;
+    color:var(--wool); line-height:1;
+  }
+  .bigtimer.low{color:var(--amber); animation:tpulse 1s ease-in-out infinite;} /* motion cue on top of color */
+  @keyframes tpulse{50%{opacity:.5;}}
+  .starter{font-size:30px; font-weight:900;}
+
+  /* ---------- vote / result ---------- */
+  .votegrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .votegrid .btn{font-size:17px; padding:18px 10px;}
+  .votegrid .btn.sel{border-color:var(--amber); background:#403513;}
+  .lownote{color:var(--amber); font-weight:800; min-height:26px; font-size:17px;}
+  .verdict{font-size:38px; font-weight:900; letter-spacing:-.02em; line-height:1.1;}
+  .wordreveal{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px; text-align:center;
+  }
+  .wordreveal .w{font-size:36px; font-weight:900;}
+  .sheepface{width:120px; height:120px;}
+
+  /* ---------- passcode gate ---------- */
+  .gate{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px;}
+  .gate input{
+    font:inherit; font-size:20px; font-weight:700; text-align:center;
+    padding:14px; border-radius:14px; border:1px solid var(--line);
+    background:var(--card); color:var(--wool); width:100%; max-width:280px;
+    -webkit-user-select:text; user-select:text;
+  }
+  .gate input::placeholder{color:#6a7458; font-weight:600;}
+  .shake{animation:shake .4s;}
+  @keyframes shake{20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);}}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+</style>
+
+<div id="app"></div>
+
+<script>
+"use strict";
+
+/* =============================== WORDS =============================== */
+const CATS = [
+{n:"Food & Drink", e:"🌮", w:["Pizza","Tacos","Sushi","Spaghetti","Pancakes","Cheeseburger","Ice Cream","Popcorn","Hot Dog","Ramen","Guacamole","Waffles","Donut","Grilled Cheese","Mac and Cheese","Cereal","Bacon","Chocolate Chip Cookie","Smoothie","Burrito","Fried Chicken","Caesar Salad","Peanut Butter","Croissant","Meatballs","Nachos","Corn Dog","Milkshake","Quesadilla","BBQ Ribs","Lasagna","Churros","Sweet Tea","Root Beer Float","French Fries","Apple Pie","Lemonade","Hot Chocolate","Mashed Potatoes","Scrambled Eggs","Oatmeal","Pretzel","Bagel","Watermelon","Cornbread","Chicken Noodle Soup","S'mores","Meatloaf","Cupcake","Orange Juice","Pickle"]},
+{n:"Animals", e:"🦒", w:["Elephant","Giraffe","Penguin","Kangaroo","Octopus","Sloth","Bald Eagle","Rattlesnake","Dolphin","Armadillo","Hummingbird","Grizzly Bear","Platypus","Flamingo","Hedgehog","Great White Shark","Owl","Raccoon","Cheetah","Sea Turtle","Llama","Skunk","Peacock","Jellyfish","Moose","Chihuahua","Hamster","Bat","Komodo Dragon","Otter","Wolf","Goldfish","Scorpion","Woodpecker","Lion","Tiger","Zebra","Hippopotamus","Gorilla","Panda","Koala","Camel","Fox","Squirrel","Rabbit","Beaver","Alligator","Ostrich","Parrot","Butterfly","Blue Whale","Horse"]},
+{n:"Europe", e:"🗼", w:["Paris","Rome","London","Barcelona","Amsterdam","Venice","Eiffel Tower","Colosseum","Big Ben","Gondola","Athens","Dublin","Prague","Swiss Alps","The Vatican","The Louvre","Stonehenge","Leaning Tower of Pisa","Loch Ness","Notre Dame","Buckingham Palace","Sistine Chapel","Pompeii","Oktoberfest","Running of the Bulls","Northern Lights","Windmills","Double-Decker Bus","Cobblestone Streets","Vienna","Copenhagen","Madrid","Berlin Wall","Medieval Castle","Baguette","Fondue","Belgian Waffles","Fish And Chips","Swiss Chocolate","Cuckoo Clock","Tulip Fields","Fjords","Red Phone Booth","The Euro"]},
+{n:"Travel & Vacation", e:"🧳", w:["Passport","Boarding Pass","Jet Lag","Window Seat","Baggage Claim","Hotel Pool","Room Service","Souvenir","Currency Exchange","Layover","Cruise Ship","Road Trip","Rest Stop","TSA Line","Postcard","Selfie Stick","Tour Guide","Sunscreen","Beach Towel","Rental Car","Train Station","Museum","Walking Tour","Street Performer","Gift Shop","Lost Luggage","Middle Seat","Turbulence","Customs","Do Not Disturb Sign","Theme Park","Sandcastle","Flip Flops","Overhead Bin","Flight Delay","Travel Pillow","Fanny Pack","Flat Tire","Traffic Jam","License Plate Game","Tent","Mosquito Bite","National Park","Lighthouse","Ice Machine","Key Card"]},
+{n:"Movies & TV", e:"🎬", w:["Star Wars","Harry Potter","The Lion King","Jurassic Park","Frozen","Toy Story","The Avengers","Titanic","Finding Nemo","Shrek","The Office","SpongeBob","Indiana Jones","Batman","Spider-Man","Lord of the Rings","Pirates of the Caribbean","Home Alone","Jaws","Back to the Future","The Incredibles","Rocky","Forrest Gump","The Princess Bride","Elf","Moana","Top Gun","The Hunger Games","Willy Wonka","Ratatouille","Karate Kid","The Wizard of Oz","Mary Poppins","Scooby-Doo","Ghostbusters","Superman","Cinderella","Aladdin","The Little Mermaid","Tom and Jerry","Sesame Street","Wheel of Fortune","E.T.","The Grinch","The Polar Express","The Sound of Music","Encanto","Charlie Brown","Peter Pan"]},
+{n:"Sports & Games", e:"🏀", w:["Basketball","Golf","Pickleball","Bowling","Chess","Monopoly","Uno","Cornhole","Dodgeball","Ping Pong","Darts","Fishing","Skateboarding","Surfing","Rock Climbing","Jenga","Hide and Seek","Tug of War","Foosball","Laser Tag","Paintball","Archery","Karate","Gymnastics","Marathon","Water Polo","Scrabble","Twister","Musical Chairs","Charades","Escape Room","Baseball","Soccer","Tennis","Volleyball","Hockey","Swimming","Bingo","Hopscotch","Jump Rope","Kickball","Trampoline","Ice Skating","Horseshoes","Dominoes","Yahtzee","Battleship","Duck Duck Goose","Rock Paper Scissors"]},
+{n:"Jobs", e:"👩‍🚒", w:["Firefighter","Dentist","Pilot","Barista","Plumber","Lifeguard","Mail Carrier","Chef","Astronaut","Farmer","Librarian","Surgeon","DJ","Real Estate Agent","Uber Driver","News Anchor","Zookeeper","Electrician","Hair Stylist","Personal Trainer","Accountant","Lawyer","Wedding Planner","Tattoo Artist","Garbage Collector","Park Ranger","Flight Attendant","Principal","Youth Pastor","Pharmacist","Food Critic","Private Investigator","Stunt Double","Dog Walker","Police Officer","Veterinarian","Teacher","Nurse","Judge","Mechanic","Carpenter","Photographer","Magician","Cowboy","Fisherman","Referee","Train Conductor","Lumberjack","Beekeeper","Ballerina","Crossing Guard","Florist"]},
+{n:"Around the House", e:"🛋️", w:["Toaster","Vacuum","Remote Control","Shower Curtain","Dishwasher","Ceiling Fan","Junk Drawer","Doorbell","Air Fryer","Coffee Maker","Laundry Basket","Ironing Board","Plunger","Smoke Detector","Garden Hose","Lawn Mower","Recliner","Bunk Bed","Nightstand","Welcome Mat","Thermostat","Extension Cord","Trash Can","Blender","Crockpot","Fridge Magnet","Paper Towels","Duct Tape","Flashlight","Alarm Clock","Scissors","Piggy Bank","Bathrobe","Candle","Microwave","Washing Machine","Light Switch","Kitchen Sink","Bathtub","Mirror","Pillow","Broom","Mailbox","Fireplace","Bookshelf","Garage Door","Frying Pan","Salt Shaker","Cookie Jar","Can Opener","Toolbox","Bird Feeder"]},
+{n:"Famous People", e:"⭐", w:["Taylor Swift","LeBron James","Abraham Lincoln","Albert Einstein","Elvis Presley","Oprah","Michael Jordan","Beyoncé","Tom Hanks","Dolly Parton","Leonardo da Vinci","Walt Disney","Neil Armstrong","Serena Williams","The Rock","George Washington","Steve Jobs","Princess Diana","Muhammad Ali","Mozart","Shakespeare","Babe Ruth","Amelia Earhart","Adele","Simone Biles","Tiger Woods","Queen Elizabeth","Bob Ross","Patrick Mahomes","Mark Twain","Michelangelo","Benjamin Franklin","Thomas Edison","Wright Brothers","Rosa Parks","Martin Luther King Jr.","Harriet Tubman","Helen Keller","Cleopatra","Beethoven","Vincent van Gogh","Dr. Seuss","Harry Houdini","Mother Teresa","Jackie Robinson","Tom Brady","Stephen Curry","Michael Phelps","Bill Gates"]},
+{n:"Bible & Church", e:"⛪", w:["Noah's Ark","David and Goliath","Garden of Eden","Moses","The Burning Bush","Jonah and the Whale","The Last Supper","Ten Commandments","The Prodigal Son","The Good Samaritan","Baptism","Communion","Church Potluck","Youth Group","Worship Band","Sunday School","VBS","Mission Trip","Christmas Pageant","Easter Sunday","Parting the Red Sea","The Manger","Shepherds","Walls of Jericho","Daniel in the Lions' Den","Fruit of the Spirit","The Golden Calf","Lazarus","Zacchaeus","Feeding the 5,000","Walking on Water","Samson","Queen Esther","Coat of Many Colors","The Tower of Babel","Jacob's Ladder","The Fiery Furnace","King Solomon","The Twelve Disciples","Doubting Thomas","The Mustard Seed","Sermon on the Mount","The Lord's Prayer","The Wise Men","The Armor of God","Palm Sunday","Offering Plate","Stained Glass","Church Camp","Memory Verse","Amazing Grace"]},
+{n:"Music", e:"🎸", w:["Electric Guitar","Karaoke","Marching Band","Drum Solo","Country Music","Violin","Opera","Beatboxing","Church Choir","Garage Band","Vinyl Record","Air Guitar","Saxophone","Bagpipes","DJ Booth","Music Festival","Ukulele","Piano Recital","Rap Battle","National Anthem","Lullaby","Elevator Music","Harmonica","Tambourine","Yodeling","Boy Band","One-Hit Wonder","Mixtape","Concert T-Shirt","Encore","Tuba","Whistling","Jukebox","Music Box","Banjo","Accordion","Trumpet","Cello","Kazoo","Xylophone","Harp","Orchestra","Conductor","Sheet Music","Slow Dance","Square Dance","Theme Song","Talent Show","Christmas Caroling","Microphone"]},
+{n:"The Great Outdoors", e:"🌋", w:["Waterfall","Volcano","Tornado","Rainbow","Cactus","Redwood Tree","Coral Reef","Glacier","Desert","Thunderstorm","Full Moon","Meteor Shower","Quicksand","Geyser","Cave","Wildflowers","Poison Ivy","Campfire","Sand Dune","Avalanche","Fog","Firefly","Tumbleweed","Swamp","Canyon","Tide Pool","Hailstorm","Sunrise","Mosquito","Solar Eclipse","Driftwood","Mud Puddle","Blizzard","Hurricane","Earthquake","Icicle","Flash Flood","River Rapids","Island","Jungle","Meadow","Seashell","Pinecone","Acorn","Dandelion","Four Leaf Clover","Mushroom","Spider Web"]},
+{n:"School Life", e:"🎒", w:["Pop Quiz","Detention","Cafeteria","Field Trip","Show and Tell","Recess","Locker","Substitute Teacher","Science Fair","Spelling Bee","Homework","Report Card","Yearbook","Prom","Graduation","School Bus","Backpack","Hall Pass","Gym Class","Band Practice","Group Project","Flashcards","Tardy Bell","Snow Day","Picture Day","Fire Drill","Book Fair","Class Clown","Teacher's Pet","Study Hall","Pep Rally","Lunch Money","Whiteboard","Principal's Office","School Nurse","Pencil Sharpener","Glue Stick","Construction Paper","Monkey Bars","Nap Time","School Play","Bake Sale","Honor Roll","Gold Star","Multiplication Tables","Pledge of Allegiance","First Day of School","Parent Teacher Conference"]},
+{n:"Texas & Austin", e:"🤠", w:["Breakfast Tacos","Whataburger","Buc-ee's","Bluebonnets","The Longhorns","Barton Springs","Food Trucks","The Alamo","Rodeo","Cowboy Boots","Brisket","Bats Under the Bridge","H-E-B","Lake Travis","Friday Night Lights","Blue Bell Ice Cream","Kolaches","Oil Rig","Ranch","Tex-Mex","Torchy's","Pecan Pie","Dr Pepper","Big Bend","South by Southwest","Queso","Y'all","Ten-Gallon Hat","Line Dancing","State Fair","Gulf Coast","Hill Country","State Capitol","Zilker Park","Trail Of Lights","Mount Bonnell","The Riverwalk","Enchanted Rock","Schlitterbahn","River Tubing","Round Rock Donuts","Keep Austin Weird","UT Tower","Dallas Cowboys","Chicken Fried Steak","Frito Pie","Texas Toast"]},
+{n:"Fantasy & Sci-Fi", e:"🐉", w:["Dragon","Lightsaber","Time Machine","Wizard","Alien","Robot","Zombie","Unicorn","Vampire","Werewolf","Spaceship","Magic Wand","Excalibur","Hobbit","Death Star","Portal","Invisibility Cloak","Crystal Ball","Phoenix","Kraken","Jetpack","Teleportation","Mermaid","Genie","Troll","Dungeon","Warp Speed","Cyborg","Haunted Castle","Potion","Bigfoot","Loch Ness Monster","Cyclops","Centaur","Leprechaun","Giant","Dwarf","Mummy","Fairy Godmother","Magic Carpet","Magic Mirror","Wishing Well","Fountain Of Youth","Enchanted Forest","Force Field","Ray Gun","Hoverboard","Flying Car"]},
+{n:"Brands", e:"🛒", w:["Nike","Apple","McDonald's","Amazon","Lego","Coca-Cola","Netflix","Starbucks","Disney","Tesla","Walmart","YouTube","Oreo","Chick-fil-A","Doritos","Jeep","Nintendo","Crocs","IKEA","Spotify","Band-Aid","Sharpie","Ziploc","Gatorade","Old Spice","Home Depot","Target","Pringles","Velcro","Kleenex","Hot Wheels","Play-Doh","John Deere","Barbie","Crayola","Nerf","Frisbee","Xbox","M&M's","Hershey's","Cheerios","Jell-O","Burger King","Pizza Hut","Dairy Queen","Ford","Levi's","Colgate","FedEx"]},
+{n:"Family Life", e:"🏡", w:["Brushing Teeth","Parallel Parking","Snoring","Sneezing","Hiccups","Sunburn","Bad Hair Day","Brain Freeze","Belly Flop","Paper Cut","Food Coma","Snooze Button","Awkward Silence","Photobomb","Binge Watching","Dad Joke","Group Chat","Spring Cleaning","Allowance","Curfew","Chores","Family Reunion","Inside Joke","Growth Spurt","Sibling Rivalry","Calling Shotgun","Leftovers","Hand-Me-Downs","Tooth Fairy","Screen Time","Grounded","Sleepover","Garage Sale","Lemonade Stand","Bedtime Story","Blanket Fort","Pillow Fight","Game Night","Training Wheels","Bunk Beds","Babysitter","Family Photo"]},
+{n:"Holidays", e:"🎄", w:["Christmas Tree","Trick or Treating","Thanksgiving Turkey","Fireworks","Easter Egg Hunt","Mistletoe","Jack-o'-Lantern","Gingerbread House","Advent Calendar","Black Friday","Candy Cane","Elf on the Shelf","Stockings","April Fools","Sparklers","Costume Party","Ugly Christmas Sweater","Secret Santa","Wishbone","New Year's Countdown","Groundhog Day","Fourth of July Parade","Pumpkin Patch","Hot Cocoa","Caroling","Nativity Scene","Valentine's Cards","Christmas Lights","Eggnog","Resolution","Reindeer","Snowman","Wrapping Paper","Milk and Cookies","Nutcracker","Confetti","Cupid","Box of Chocolates","Easter Bunny","American Flag","Hayride","Corn Maze","Haunted House","Bobbing for Apples","Cranberry Sauce","Dreidel"]},
+{n:"Geography", e:"🌍", w:["Mount Everest","Great Wall of China","Statue of Liberty","Golden Gate Bridge","Niagara Falls","Egypt","Nile River","Sahara Desert","Taj Mahal","Japan","Tokyo","Australia","Sydney Opera House","Great Barrier Reef","Brazil","Amazon River","Rio de Janeiro","Mexico","Canada","India","Hawaii","Alaska","Texas","Florida","California","New York City","Chicago","New Orleans","Hollywood","Mount Rushmore","Yellowstone","Mississippi River","Rocky Mountains","Death Valley","The Everglades","Yosemite","Hoover Dam","Times Square","Antarctica","North Pole","Panama Canal","Jerusalem","Red Sea","Russia","Germany","Iceland","Great Lakes","New Zealand","Madagascar","Bermuda Triangle","Pacific Ocean","Washington D.C."]},
+{n:"History", e:"🏛️", w:["Boston Tea Party","Declaration Of Independence","Liberty Bell","Revolutionary War","Paul Revere's Ride","Thirteen Colonies","Mayflower","First Thanksgiving","Plymouth Rock","Jamestown","The Constitution","Bill Of Rights","Star Spangled Banner","Louisiana Purchase","Lewis And Clark","Oregon Trail","Covered Wagon","Pony Express","Gold Rush","Wild West","Transcontinental Railroad","Civil War","Underground Railroad","Gettysburg Address","Ellis Island","Great Chicago Fire","First Flight","Great Depression","Pearl Harbor","D-Day","Cold War","Space Race","I Have A Dream","Printing Press","Morse Code","Stone Age","Egyptian Pyramids","King Tut","Hieroglyphics","Trojan Horse","Ancient Olympics","Roman Empire","Vikings","Middle Ages","Samurai"]},
+{n:"Science & Nature", e:"🔬", w:["Black Hole","Milky Way","Saturn","Mars","Space Station","Rocket","Telescope","Comet","Big Dipper","North Star","Gravity","Satellite","DNA","Fingerprint","Skeleton","Funny Bone","Taste Buds","Wisdom Teeth","Goose Bumps","Oxygen","Helium","Periodic Table","Rust","Dry Ice","Magnet","Static Electricity","Echo","Shadow","Pendulum","Optical Illusion","Light Bulb","Thermometer","Compass","Battery","X-Ray","Telephone","Microscope","Test Tube","Magnifying Glass","Isaac Newton","Fossil","Dinosaur","Grand Canyon"]},
+{n:"Arts & Literature", e:"📚", w:["Snow White","Sleeping Beauty","Rapunzel","Hansel and Gretel","Little Red Riding Hood","The Three Little Pigs","Jack and the Beanstalk","Goldilocks","Rumpelstiltskin","The Gingerbread Man","Tortoise and the Hare","Beauty and the Beast","Pinocchio","Humpty Dumpty","Winnie the Pooh","Charlotte's Web","Cat in the Hat","Curious George","Paddington","Goodnight Moon","The Giving Tree","The Very Hungry Caterpillar","Alice in Wonderland","Robin Hood","King Arthur","Treasure Island","Moby Dick","Sherlock Holmes","Little Women","Tom Sawyer","A Christmas Carol","Narnia","The Jungle Book","Mona Lisa","Pablo Picasso","Broadway","Romeo and Juliet","The Nutcracker","Phantom of the Opera","Annie","Ballet"]}
+];
+
+/* =============================== STATE =============================== */
+const LS = "blacksheep_v1";
+function load(){
+  try{ return JSON.parse(localStorage.getItem(LS)) || {}; }catch(e){ return {}; }
+}
+function save(){
+  try{ localStorage.setItem(LS, JSON.stringify({players:S.players, settings:S.settings, scores:S.scores, used:S.used, known:S.known, round:S.round, view:S.view})); }catch(e){}
+}
+const saved = load();
+const S = {
+  players: saved.players || [],
+  settings: Object.assign({sheep:1, hint:true, timer:3, cats:CATS.map(c=>c.n)}, saved.settings||{}),
+  scores: saved.scores || {},
+  used: saved.used || [],
+  round: null,
+  view: "home",
+};
+// drop any saved category names that no longer exist
+S.settings.cats = S.settings.cats.filter(n => CATS.some(c=>c.n===n));
+// categories added in an update start enabled, without overriding ones the user turned off
+const knownCats = saved.known || [];
+for(const c of CATS) if(!knownCats.includes(c.n) && !S.settings.cats.includes(c.n)) S.settings.cats.push(c.n);
+S.known = CATS.map(c=>c.n);
+if(!S.settings.cats.length) S.settings.cats = CATS.map(c=>c.n);
+// resume an in-flight round after a reload (iOS reloads backgrounded tabs freely).
+// never resume into "result": that view applies scores as it renders.
+if(saved.round && ["reveal","table","vote"].includes(saved.view) && saved.round.order && saved.round.order.every(i => i < S.players.length)){
+  S.round = saved.round;
+  S.view = saved.view;
+}
+
+const $ = sel => document.querySelector(sel);
+const app = $("#app");
+const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* =============================== ICON =============================== */
+/* Draw the black sheep once on a canvas; reuse as home-screen icon + in-app logo */
+function drawSheep(ctx, size, opts){
+  const s = size/180, o = opts||{};
+  ctx.save();
+  if(o.bg){ ctx.fillStyle = o.bg; ctx.fillRect(0,0,size,size); }
+  ctx.scale(s,s);
+  // wool: cluster of dark puffs
+  ctx.fillStyle = "#181818";
+  const puffs = [[90,92,44],[62,84,30],[118,84,30],[58,104,26],[122,104,26],[74,116,28],[106,116,28],[90,70,30]];
+  for(const [x,y,r] of puffs){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
+  // legs
+  ctx.strokeStyle = "#181818"; ctx.lineWidth = 9; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(72,132); ctx.lineTo(70,152); ctx.moveTo(108,132); ctx.lineTo(110,152); ctx.stroke();
+  // head
+  ctx.fillStyle = "#2b2b2b";
+  ctx.beginPath(); ctx.ellipse(90,64,22,19,0,0,7); ctx.fill();
+  // ears
+  ctx.beginPath(); ctx.ellipse(66,58,10,6,-0.5,0,7); ctx.ellipse(114,58,10,6,0.5,0,7); ctx.fill();
+  // wool tuft on head
+  ctx.fillStyle = "#181818";
+  ctx.beginPath(); ctx.arc(84,48,9,0,7); ctx.arc(96,48,9,0,7); ctx.fill();
+  // eyes (a little shifty, looking left)
+  ctx.fillStyle = "#f2edde";
+  ctx.beginPath(); ctx.arc(81,63,6.5,0,7); ctx.arc(99,63,6.5,0,7); ctx.fill();
+  ctx.fillStyle = "#181818";
+  ctx.beginPath(); ctx.arc(78.5,64,3,0,7); ctx.arc(96.5,64,3,0,7); ctx.fill();
+  ctx.restore();
+}
+function installIcon(){
+  try{
+    const c = document.createElement("canvas"); c.width = c.height = 180;
+    const ctx = c.getContext("2d");
+    drawSheep(ctx, 180, {bg:"#e8a33c"});
+    // browser-tab favicon only; the home-screen icon is the static apple-touch-icon.png link
+    const l = document.createElement("link"); l.rel = "icon"; l.href = c.toDataURL("image/png");
+    document.head.appendChild(l);
+  }catch(e){}
+}
+function logoSVGCanvas(){
+  const c = document.createElement("canvas"); c.width = c.height = 192;
+  c.style.width = "96px"; c.style.height = "96px";
+  const ctx = c.getContext("2d"); ctx.scale(192/180 ,192/180);
+  drawSheep(ctx, 180, {});
+  return c;
+}
+
+/* =============================== WORD PICK =============================== */
+function pickWord(){
+  const enabled = CATS.filter(c => S.settings.cats.includes(c.n));
+  let fresh = [];
+  for(const c of enabled) for(const w of c.w) if(!S.used.includes(w)) fresh.push({cat:c.n, word:w});
+  if(!fresh.length){
+    // whole enabled pool exhausted: recycle it
+    const enabledWords = new Set(enabled.flatMap(c=>c.w));
+    S.used = S.used.filter(w => !enabledWords.has(w));
+    for(const c of enabled) for(const w of c.w) fresh.push({cat:c.n, word:w});
+  }
+  const pick = fresh[Math.floor(Math.random()*fresh.length)];
+  S.used.push(pick.word);
+  save();
+  return pick;
+}
+
+/* =============================== ROUND =============================== */
+function startRound(){
+  const n = S.players.length;
+  const sheepCount = Math.min(S.settings.sheep, n>=5 ? 2 : 1);
+  const idx = shuffle(S.players.map((_,i)=>i));
+  const sheep = idx.slice(0, sheepCount);
+  const {cat, word} = pickWord();
+  S.round = {
+    word, cat, sheep,
+    order: shuffle(S.players.map((_,i)=>i)),   // reveal order = seating-agnostic
+    revealPos: 0,
+    starter: Math.floor(Math.random()*n),
+    dir: Math.random() < .5 ? "left" : "right",
+  };
+  go("reveal");
+}
+
+function addPoints(name, pts){ S.scores[name] = (S.scores[name]||0) + pts; }
+
+// a cancelled round gives its never-finished word back to the pool
+function cancelRound(){
+  stopTimer();
+  if(S.round){
+    const i = S.used.lastIndexOf(S.round.word);
+    if(i >= 0) S.used.splice(i,1);
+  }
+  S.round = null;
+  go("home");
+}
+
+/* =============================== VIEWS =============================== */
+function go(view){ S.view = view; save(); render(); window.scrollTo(0,0); }
+
+function render(){
+  ({home:vHome, reveal:vReveal, table:vTable, vote:vVote, result:vResult})[S.view]();
+}
+
+/* ---------- home ---------- */
+function vHome(){
+  const canStart = S.players.length >= 3;
+  const anyScores = Object.keys(S.scores).length > 0;
+  app.innerHTML = `
+  <div class="screen">
+    <div class="logo">
+      <div id="logoArt"></div>
+      <h1>Black Sheep</h1>
+      <div class="tag">One of you doesn't know the word.</div>
+    </div>
+
+    <button class="btn" id="start" ${canStart?"":"disabled"}>Start round</button>
+    ${canStart ? "" : `<div style="text-align:center; color:var(--wool-dim); font-weight:700; margin-top:-6px;">Add at least 3 players first 👇</div>`}
+
+    <div class="panel">
+      <h3>The Flock (${S.players.length})</h3>
+      <div class="chips" id="plist">
+        ${S.players.map((p,i)=>`<span class="chip">${esc(p)}<button class="x" data-i="${i}" aria-label="Remove ${esc(p)}">×</button></span>`).join("") || `<span style="color:var(--moss);font-size:15px;">Nobody here yet. Add the family.</span>`}
+      </div>
+      <div class="addrow">
+        <input id="pname" placeholder="Name" maxlength="14" autocomplete="off" enterkeyhint="done">
+        <button class="btn" id="padd">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Settings</h3>
+      <div class="setrow">
+        <div><div class="lbl">Black sheep</div><div class="sub">${S.players.length>=5?"":"2 needs 5+ players"}</div></div>
+        <div class="seg" id="sheepSeg">
+          <button data-v="1" class="${S.settings.sheep===1?"on":""}">1</button>
+          <button data-v="2" class="${S.settings.sheep===2?"on":""}">2</button>
+        </div>
+      </div>
+      <div class="setrow">
+        <div><div class="lbl">Sheep sees category</div><div class="sub">Easier for the sheep to blend in</div></div>
+        <div class="seg" id="hintSeg">
+          <button data-v="1" class="${S.settings.hint?"on":""}">On</button>
+          <button data-v="0" class="${!S.settings.hint?"on":""}">Off</button>
+        </div>
+      </div>
+      <div class="setrow">
+        <div><div class="lbl">Discussion timer</div></div>
+        <div class="seg" id="timerSeg">
+          ${[0,1,2,3,5].map(m=>`<button data-v="${m}" class="${S.settings.timer===m?"on":""}">${m===0?"Off":m+"m"}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Categories (${S.settings.cats.length}/${CATS.length} on · ${CATS.filter(c=>S.settings.cats.includes(c.n)).reduce((a,c)=>a+c.w.length,0)} words)</h3>
+      <div class="chips" id="cats">
+        ${CATS.map(c=>{const on=S.settings.cats.includes(c.n); return `<button class="chip cat ${on?"on":""}" data-c="${esc(c.n)}">${on?"✓ ":""}${c.e} ${esc(c.n)}</button>`;}).join("")}
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn ghost small" id="allcats">All on</button>
+        <button class="btn ghost small" id="freshwords">Reset used words (${S.used.length})</button>
+      </div>
+    </div>
+
+    ${anyScores ? `
+    <div class="panel">
+      <h3>Scoreboard</h3>
+      <div class="score-list">
+        ${S.players.map(n=>[n, S.scores[n]||0]).sort((a,b)=>b[1]-a[1]).map(([n,p])=>`<div class="score-item"><span>${esc(n)}</span><span class="pts">${p}</span></div>`).join("")}
+      </div>
+      <div style="margin-top:12px;"><button class="btn ghost small" id="wipescores">Reset scores</button></div>
+    </div>` : ""}
+
+    <details class="howto">
+      <summary>How to play</summary>
+      <p><b>Pass the phone around.</b> Everyone holds to peek at their card. The crew all see the same secret word. The black sheep sees only that they're the sheep.</p>
+      <p><b>Go around the circle</b> starting with the player the app picks. Each person says one word or short phrase related to the secret word. Too obvious and the sheep learns the word; too vague and you look like the sheep.</p>
+      <p><b>Talk, accuse, then vote</b> someone out (point on three). If you catch the sheep, they get one shot to guess the word out loud.</p>
+      <p><b>Scoring:</b> sheep survives the vote: +3. Sheep gets caught but guesses the word: +2. Sheep gets caught and misses: everyone else +1. With two sheep, they don't know who each other are.</p>
+    </details>
+  </div>`;
+
+  $("#logoArt").appendChild(logoSVGCanvas());
+  $("#start").onclick = startRound;
+
+  const input = $("#pname");
+  const add = () => {
+    const v = input.value.trim();
+    if(!v) return;
+    if(S.players.some(p=>p.toLowerCase()===v.toLowerCase())){ input.value=""; return; }
+    if(S.players.length >= 12) return;
+    S.players.push(v); save(); vHome(); $("#pname").focus();
+  };
+  $("#padd").onclick = add;
+  input.addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); add(); }});
+  $("#plist").querySelectorAll(".x").forEach(b => b.onclick = () => {
+    S.players.splice(+b.dataset.i,1); save(); vHome();
+  });
+
+  $("#sheepSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.settings.sheep = +b.dataset.v; save(); vHome(); });
+  $("#hintSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.settings.hint = b.dataset.v==="1"; save(); vHome(); });
+  $("#timerSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.settings.timer = +b.dataset.v; save(); vHome(); });
+
+  $("#cats").querySelectorAll(".chip.cat").forEach(b => b.onclick = () => {
+    const n = b.dataset.c;
+    if(S.settings.cats.includes(n)){
+      if(S.settings.cats.length === 1) return;          // keep at least one on
+      S.settings.cats = S.settings.cats.filter(x=>x!==n);
+    } else S.settings.cats.push(n);
+    save(); vHome();
+  });
+  $("#allcats").onclick = () => { S.settings.cats = CATS.map(c=>c.n); save(); vHome(); };
+  $("#freshwords").onclick = () => { S.used = []; save(); vHome(); };
+  const ws = $("#wipescores"); if(ws) ws.onclick = () => { S.scores = {}; save(); vHome(); };
+}
+
+/* ---------- reveal (pass the phone) ----------
+   Two-tap protection: the card is locked until its owner taps once to claim it,
+   so grabbing the phone or a stray tap never flashes the word. Then press-and-hold
+   shows the card and releasing hides it again. */
+function vReveal(){
+  const r = S.round;
+  const pi = r.order[r.revealPos];
+  const name = S.players[pi];
+  const isSheep = r.sheep.includes(pi);
+  const last = r.revealPos === r.order.length - 1;
+  const first = r.revealPos === 0;
+
+  app.innerHTML = `
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn ghost small" id="back">${first ? "✕ Cancel round" : "← Back"}</button>
+      <div class="progress">Card ${r.revealPos+1} of ${r.order.length}</div>
+    </div>
+    <div class="center" style="justify-content:flex-start; padding-top:12px;">
+      <div class="passname">${esc(name)}</div>
+      <div class="eyebrow">${esc(name)}'s card. Everyone else, eyes up. 👀</div>
+      <button class="holdbtn" id="hold" aria-label="Claim, then hold to see your card">
+        <span id="holdInner">🔒<br>Tap once if you're ${esc(name)}</span>
+      </button>
+      <button class="btn" id="next" disabled>${last ? "Everyone's in →" : "Hidden. Pass it on →"}</button>
+    </div>
+  </div>`;
+
+  const hold = $("#hold"), inner = $("#holdInner"), next = $("#next");
+  let armed = false, seen = false;
+
+  const armedMsg = `👇<br>Now press and hold to peek<br><span style="font-size:14px; color:var(--moss); font-weight:600;">Letting go hides it again</span>`;
+  const cardHTML = isSheep
+    ? `<div class="word">YOU'RE THE<br>BLACK SHEEP 🐑</div>
+       ${S.settings.hint ? `<div class="cat">Category: ${esc(r.cat)}</div>` : ""}
+       <div style="font-size:15px; color:var(--wool-dim); font-weight:600;">Blend in. Don't get caught.</div>`
+    : `<div class="cat">${esc(r.cat)}</div>
+       <div class="word">${esc(r.word)}</div>`;
+
+  const show = e => {
+    if(!armed) return;   // guard first: preventDefault would swallow the arming tap's click
+    e.preventDefault();
+    hold.classList.add("held"); if(isSheep) hold.classList.add("sheep");
+    inner.innerHTML = cardHTML;
+    seen = true;
+  };
+  const hide = () => {
+    if(!armed) return;
+    hold.classList.remove("held","sheep");
+    inner.innerHTML = armedMsg;
+    if(seen) next.disabled = false;
+  };
+  // pointerdown fires before click, so the claiming tap can't flash the card
+  hold.addEventListener("click", () => {
+    if(!armed){ armed = true; inner.innerHTML = armedMsg; }
+  });
+  hold.addEventListener("pointerdown", show);
+  hold.addEventListener("pointerup", hide);
+  hold.addEventListener("pointercancel", hide);
+  hold.addEventListener("pointerleave", hide);
+  hold.addEventListener("contextmenu", e => e.preventDefault());
+  // keyboard/switch access: hold Space or Enter to peek, release to hide
+  hold.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); if(armed) show(e); else { armed = true; inner.innerHTML = armedMsg; } } });
+  hold.addEventListener("keyup", e => { if(e.key === " " || e.key === "Enter") hide(); });
+
+  next.onclick = () => {
+    if(last){ go("table"); return; }
+    r.revealPos++; save(); vReveal();
+  };
+  $("#back").onclick = () => {
+    if(first){ cancelRound(); }
+    else { r.revealPos--; save(); vReveal(); }
+  };
+}
+
+/* ---------- discussion ---------- */
+let timerId = null, audioCtx = null;
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
+// the context must be created/resumed inside a tap: iOS keeps gesture-less audio suspended forever
+function ensureAudio(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = audioCtx || new AC();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+  }catch(e){}
+}
+function beep(){
+  try{
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    [0,.25,.5].forEach(t => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(.001, now+t);
+      g.gain.exponentialRampToValueAtTime(.3, now+t+.02);
+      g.gain.exponentialRampToValueAtTime(.001, now+t+.2);
+      o.start(now+t); o.stop(now+t+.22);
+    });
+  }catch(e){}
+}
+function vTable(){
+  const r = S.round;
+  const mins = S.settings.timer;
+  if(mins && (r.timerRemain === undefined || r.timerRemain === null)) r.timerRemain = mins*60;
+  const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+
+  app.innerHTML = `
+  <div class="screen">
+    <div class="center">
+      <div class="eyebrow">${S.settings.hint ? `Category: ${esc(r.cat)}` : "Category is a secret this round"}</div>
+      <div class="starter">${esc(S.players[r.starter])} goes first</div>
+      <div style="color:var(--wool-dim); font-weight:600;">Then go around to the ${r.dir} ${r.dir==="left"?"⬅️":"➡️"}. One clue each, then discuss.</div>
+      <div style="color:var(--amber); font-weight:800;">🐑 ${r.sheep.length === 1 ? "1 black sheep is" : r.sheep.length + " black sheep are"} hiding among ${S.players.length} of you</div>
+      ${mins ? `<div class="bigtimer${r.timerRemain<=30?" low":""}" id="clock">${fmt(r.timerRemain)}</div>
+                <div class="lownote" id="lownote">${r.timerRemain<=0 ? "⏰ Time's up!" : (r.timerRemain<=30 ? "⏰ Under 30 seconds" : "")}</div>
+                <button class="btn ghost" id="tstart" style="max-width:240px;">${r.timerRemain<=0 ? "Restart timer" : (r.timerRemain < mins*60 ? "Resume timer" : "Start timer")}</button>` : ""}
+      <button class="btn" id="tovote" style="margin-top:8px;">Time to vote 🗳️</button>
+      <button class="btn ghost small" id="abort">Cancel round</button>
+    </div>
+  </div>`;
+
+  if(mins){
+    $("#tstart").onclick = function(){
+      if(timerId){ stopTimer(); this.textContent = "Resume timer"; return; }
+      ensureAudio();
+      if(r.timerRemain <= 0){
+        r.timerRemain = mins*60;
+        $("#clock").classList.remove("low");
+        $("#clock").textContent = fmt(r.timerRemain);
+        $("#lownote").textContent = "";
+      }
+      this.textContent = "Pause timer";
+      // deadline math, not tick counting: iOS halts JS when the screen locks, ticks would go missing
+      const endAt = Date.now() + r.timerRemain*1000;
+      timerId = setInterval(() => {
+        const c = $("#clock"); if(!c){ stopTimer(); return; }
+        r.timerRemain = Math.max(0, Math.round((endAt - Date.now())/1000));
+        c.textContent = fmt(r.timerRemain);
+        if(r.timerRemain <= 30){ c.classList.add("low"); $("#lownote").textContent = "⏰ Under 30 seconds"; }
+        if(r.timerRemain <= 0){
+          stopTimer(); beep();
+          $("#lownote").textContent = "⏰ Time's up!";
+          const b = $("#tstart"); if(b) b.textContent = "Restart timer";
+        }
+      }, 250);
+    };
+  }
+  $("#tovote").onclick = () => { stopTimer(); save(); go("vote"); };
+  $("#abort").onclick = cancelRound;
+}
+
+/* ---------- vote ---------- */
+function vVote(){
+  const r = S.round;
+  app.innerHTML = `
+  <div class="screen">
+    <div class="center" style="justify-content:flex-start; padding-top:24px;">
+      <div class="eyebrow">The flock has spoken</div>
+      <h2 style="font-size:30px; font-weight:900;">Who's the black sheep?</h2>
+      <div style="color:var(--wool-dim); font-weight:600;">Point on three, majority rules. Tap who you voted out.</div>
+      <div style="color:var(--amber); font-weight:800;">🐑 ${S.round.sheep.length === 1 ? "1 sheep" : S.round.sheep.length + " sheep"} among ${S.players.length} players</div>
+      <div class="votegrid" style="width:100%; margin-top:8px;">
+        ${S.players.map((p,i)=>`<button class="btn ghost" data-i="${i}">${esc(p)}</button>`).join("")}
+      </div>
+      <div class="lownote" id="vconfirm"></div>
+      <button class="btn ghost small" id="back">← Keep talking</button>
+    </div>
+  </div>`;
+  // two-tap confirm, same protection as the reveal cards: one stray tap must not decide the round
+  let sel = null;
+  app.querySelectorAll(".votegrid .btn").forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    if(sel === i){ r.voted = i; go("result"); return; }
+    sel = i;
+    app.querySelectorAll(".votegrid .btn").forEach(x => x.classList.toggle("sel", +x.dataset.i === i));
+    $("#vconfirm").textContent = `Tap ${S.players[i]} again to confirm`;
+  });
+  $("#back").onclick = () => go("table");
+}
+
+/* ---------- result ---------- */
+function vResult(){
+  const r = S.round;
+  const caught = r.sheep.includes(r.voted);
+  const sheepNames = r.sheep.map(i=>S.players[i]);
+  const votedName = S.players[r.voted];
+
+  if(!caught){
+    // sheep survives
+    r.sheep.forEach(i => addPoints(S.players[i], 3));
+    save();
+    app.innerHTML = `
+    <div class="screen"><div class="center">
+      <div id="face"></div>
+      <div class="verdict" style="color:var(--blood);">Baa. ${esc(votedName)} was innocent.</div>
+      <div style="font-size:19px; font-weight:700;">The black sheep ${sheepNames.length>1?"were":"was"} <span style="color:var(--amber);">${esc(sheepNames.join(" & "))}</span> · +3 each</div>
+      <div class="wordreveal" style="width:100%;"><div class="eyebrow">The word was</div><div class="w">${esc(r.word)}</div></div>
+      ${scoreStrip()}
+      <button class="btn" id="again">Next round</button>
+      <button class="btn ghost" id="home">Home</button>
+    </div></div>`;
+    wireEnd();
+    return;
+  }
+
+  // caught: sheep gets a word guess before we show the word
+  if(!r.guessed){
+    app.innerHTML = `
+    <div class="screen"><div class="center">
+      <div class="verdict" style="color:var(--ok);">🎯 Caught! ${esc(votedName)} is the black sheep.</div>
+      ${sheepNames.length>1 ? `<div style="font-weight:700;">(${esc(sheepNames.filter(n=>n!==votedName).join(" & "))} was hiding too!)</div>` : ""}
+      <div style="font-size:18px; color:var(--wool-dim); font-weight:600;">One shot at redemption: sheep, say your guess for the secret word <b style="color:var(--wool);">out loud</b>. Then reveal.</div>
+      <button class="btn" id="reveal">Reveal the word</button>
+    </div></div>`;
+    $("#reveal").onclick = () => { r.guessed = true; vResult(); };
+    return;
+  }
+
+  if(r.outcome === undefined){
+    app.innerHTML = `
+    <div class="screen"><div class="center">
+      <div class="wordreveal" style="width:100%;"><div class="eyebrow">The word was</div><div class="w">${esc(r.word)}</div></div>
+      <div style="font-size:19px; font-weight:800;">Did the sheep guess it?</div>
+      <div class="row" style="width:100%;">
+        <button class="btn" id="yes">✓ Nailed it</button>
+        <button class="btn ghost" id="no">✗ Missed</button>
+      </div>
+    </div></div>`;
+    $("#yes").onclick = () => { r.outcome = "guessed"; applyCaught(); };
+    $("#no").onclick  = () => { r.outcome = "missed";  applyCaught(); };
+    return;
+  }
+
+  function applyCaught(){
+    if(r.outcome === "guessed"){
+      r.sheep.forEach(i => addPoints(S.players[i], 2));
+    } else {
+      S.players.forEach((p,i) => { if(!r.sheep.includes(i)) addPoints(p, 1); });
+    }
+    save(); finalCaught();
+  }
+  function finalCaught(){
+    app.innerHTML = `
+    <div class="screen"><div class="center">
+      <div id="face"></div>
+      <div class="verdict">${r.outcome==="guessed" ? "Sheep steals it! +2" : "The flock wins! +1 each"}</div>
+      <div style="font-size:18px; font-weight:700;">Sheep: <span style="color:var(--amber);">${esc(sheepNames.join(" & "))}</span> · Word: <span style="color:var(--amber);">${esc(r.word)}</span></div>
+      ${scoreStrip()}
+      <button class="btn" id="again">Next round</button>
+      <button class="btn ghost" id="home">Home</button>
+    </div></div>`;
+    wireEnd();
+  }
+  applyCaught();
+}
+
+function scoreStrip(){
+  const top = S.players.map(n=>[n, S.scores[n]||0]).sort((a,b)=>b[1]-a[1]);
+  if(!top.length) return "";
+  return `<div class="panel" style="width:100%;"><h3>Scoreboard</h3><div class="score-list">
+    ${top.map(([n,p])=>`<div class="score-item"><span>${esc(n)}</span><span class="pts">${p}</span></div>`).join("")}
+  </div></div>`;
+}
+function wireEnd(){
+  const f = $("#face"); if(f){ const c = logoSVGCanvas(); c.style.width="80px"; c.style.height="80px"; f.appendChild(c); }
+  $("#again").onclick = startRound;
+  $("#home").onclick = () => { S.round = null; go("home"); };
+}
+
+/* =============================== PASSCODE GATE ===============================
+   "A little security": keeps strangers who find the URL out of the game.
+   The code lives in plain sight in this file, so it is a garden gate, not a vault. */
+const PASSCODE = "flock2026";   // change me, then tell the family
+function isUnlocked(){
+  try{ return localStorage.getItem("blacksheep_unlocked") === "yes"; }catch(e){ return true; }
+}
+function vGate(){
+  app.innerHTML = `
+  <div class="screen"><div class="gate">
+    <div id="gateArt"></div>
+    <h1 style="font-size:38px; font-weight:900;">Black Sheep</h1>
+    <div style="color:var(--wool-dim); font-weight:600;">Family flock only. What's the passcode?</div>
+    <input id="pass" type="text" placeholder="Passcode" autocomplete="off" autocapitalize="off" enterkeyhint="go">
+    <button class="btn" id="unlock" style="max-width:280px;">Let me in</button>
+    <div id="gateMsg" style="color:var(--blood); font-weight:700; min-height:22px;"></div>
+  </div></div>`;
+  $("#gateArt").appendChild(logoSVGCanvas());
+  const tryIt = () => {
+    if($("#pass").value.trim().toLowerCase() === PASSCODE.toLowerCase()){
+      try{ localStorage.setItem("blacksheep_unlocked","yes"); }catch(e){}
+      render();
+    } else {
+      $("#gateMsg").textContent = "Not it. Ask Ty for the code.";
+      $("#pass").classList.add("shake");
+      setTimeout(() => $("#pass").classList.remove("shake"), 450);
+    }
+  };
+  $("#unlock").onclick = tryIt;
+  $("#pass").addEventListener("keydown", e => { if(e.key === "Enter") tryIt(); });
+}
+
+/* =============================== INSTALL WALL ===============================
+   Phones play from the home-screen app, not a browser tab: installed apps keep
+   their saves (Safari tabs lose storage after 7 days unused) and work offline. */
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(navigator.userAgent);
+function isStandalone(){
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+function browserOk(){
+  try{ return localStorage.getItem("blacksheep_browser_ok") === "yes"; }catch(e){ return true; }
+}
+function vInstall(){
+  const steps = isIOS
+    ? `<b>1.</b> Tap the Share button in Safari (the square with the arrow)<br>
+       <b>2.</b> Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b><br>
+       <b>3.</b> Open <b>Black Sheep</b> from your home screen`
+    : `<b>1.</b> Tap the ⋮ menu in Chrome<br>
+       <b>2.</b> Tap <b>Add to Home screen</b>, then <b>Install</b><br>
+       <b>3.</b> Open <b>Black Sheep</b> from your home screen`;
+  app.innerHTML = `
+  <div class="screen"><div class="gate">
+    <div id="gateArt"></div>
+    <h1 style="font-size:38px; font-weight:900;">Black Sheep</h1>
+    <div style="color:var(--wool-dim); font-weight:600;">This game lives on your home screen, not in the browser.</div>
+    <div class="panel" style="text-align:left; font-size:16px; line-height:2; color:var(--wool);">${steps}</div>
+    <div style="color:var(--moss); font-size:14px; font-weight:600;">Installed, it keeps your players and scores and works offline.</div>
+    <button class="btn ghost small" id="skipwall">Just visiting? Play in the browser</button>
+  </div></div>`;
+  $("#gateArt").appendChild(logoSVGCanvas());
+  $("#skipwall").onclick = () => {
+    try{ localStorage.setItem("blacksheep_browser_ok","yes"); }catch(e){}
+    boot();
+  };
+}
+
+/* =============================== BOOT =============================== */
+function boot(){
+  if((isIOS || isAndroid) && !isStandalone() && !browserOk()){ vInstall(); return; }
+  if(isUnlocked()) render(); else vGate();
+}
+installIcon();
+boot();
+if(location.protocol === "https:" && "serviceWorker" in navigator){
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+</script>
