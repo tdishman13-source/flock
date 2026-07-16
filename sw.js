@@ -1,7 +1,7 @@
 /* Black Sheep service worker: cache-first so the installed app works offline.
    After ANY change to index.html, bump the cache name (blacksheep-v1 -> v2)
    so installed phones pull the new build. */
-const CACHE = "blacksheep-v1";
+const CACHE = "blacksheep-v2";
 const ASSETS = [
   "./",
   "./index.html",
