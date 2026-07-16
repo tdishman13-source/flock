@@ -1,2 +1,0 @@
-# flock
-Black-sheep game
